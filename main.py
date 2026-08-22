@@ -8,7 +8,7 @@ from flask import Flask
 
 # Load environment variables from .env
 load_dotenv()
-DISCORD_TOKEN = os.getenv('MTUyNTgxNjY5MTExNDkwMTUyNA.GwHD-t.lqpt-6BzW8urS6nIFUC0VstjUvABXgqdV7vVuc')
+DISCORD_TOKEN = os.getenv("MTUyNTgxNjY5MTExNDkwMTUyNA.GwHD-t.lqpt-6BzW8urS6nIFUC0VstjUvABXgqdV7vVuc")
 OPENROUTER_API_KEY = os.getenv('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')
 
 # Put your custom animated emoji ID here
