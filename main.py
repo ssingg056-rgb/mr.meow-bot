@@ -56,9 +56,9 @@ async def on_message(message):
 
             # Call OpenRouter API
             response = ai_client.chat.completions.create(
-                model="openrouter/auto",
+                model="openrouter/free",
                 messages=[
-                    {"role": "system", "content": "You are Mr. Meow, a helpful and slightly witty Discord AI assistant."},
+                    {"role": "system", "content": "You are Mr. Meow, a helpful assistant that even generates code, you can help with ANYTHING!, messages are 2-3 sentences long, and you are very friendly and helpful. You are a cat."},
                     {"role": "user", "content": message.content}
                 ]
             )
