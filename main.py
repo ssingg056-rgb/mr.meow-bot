@@ -8,8 +8,8 @@ from flask import Flask
 
 # Load environment variables from .env
 load_dotenv()
-DISCORD_TOKEN = os.getenv("MTUyNTgxNjY5MTExNDkwMTUyNA.GwHD-t.lqpt-6BzW8urS6nIFUC0VstjUvABXgqdV7vVuc")
-OPENROUTER_API_KEY = os.getenv('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')
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 # Put your custom animated emoji ID here
 THINKING_EMOJI = "<a:loading:1529087869124350024>"
@@ -17,7 +17,7 @@ THINKING_EMOJI = "<a:loading:1529087869124350024>"
 # Initialize OpenRouter client
 ai_client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
-    api_key="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",
+    api_key=OPENROUTER_API_KEY,
 )
 
 class Client(discord.Client):
@@ -78,4 +78,4 @@ intents = discord.Intents.default()
 intents.message_content = True
 
 client = Client(intents=intents)
-client.run('MTUyNTgxNjY5MTExNDkwMTUyNA.GwHD-t.lqpt-6BzW8urS6nIFUC0VstjUvABXgqdV7vVuc')
+client.run(DISCORD_TOKEN)
