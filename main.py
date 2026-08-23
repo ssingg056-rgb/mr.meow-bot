@@ -3,6 +3,27 @@ import asyncio
 import discord
 from dotenv import load_dotenv
 from openai import OpenAI
+from flask import Flask
+from threading import Thread
+
+# --- FLASK KEEP-ALIVE SERVER ---
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "Mr. Meow is online!"
+
+def run():
+    port = int(os.getenv("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
+
+def keep_alive():
+    t = Thread(target=run)
+    t.daemon = True
+    t.start()
+
+keep_alive()
+# -------------------------------
 
 # Load environment variables from .env
 load_dotenv()
@@ -70,10 +91,6 @@ class Client(discord.Client):
             except Exception as e:
                 print(f"Error handling message: {e}")
                 await thinking_msg.edit(content="Meow! Something went wrong processing that request.")
-
-            except Exception as e:
-                await thinking_msg.edit(content="Sorry, I ran into an error.")
-                print(f"Error: {e}")
 
 intents = discord.Intents.default()
 intents.message_content = True
