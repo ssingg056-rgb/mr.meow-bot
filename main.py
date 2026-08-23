@@ -29,10 +29,25 @@ load_dotenv()
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
 OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
 
-# Replace with your copied Discord User ID!
-OWNER_ID = 1521196096465010719  
+# Replace with your actual numerical Discord User ID!
+OWNER_ID = 123456789012345678  
 
 THINKING_EMOJI = "<a:loading:1529087869124350024>"
+
+# Dictionary to store conversation history per channel
+# Structure: { channel_id: [ {"role": "...", "content": "..."}, ... ] }
+CONVERSATION_HISTORY = {}
+MAX_HISTORY = 10  # Remembers the last 10 messages per chat
+
+SYSTEM_PROMPT = {
+    "role": "system",
+    "content": (
+        "You are Mr. Meow, a witty and sarcastic cat assistant on Discord. "
+        "You were created and programmed exclusively by Certified Chad. "
+        "NEVER say you were made by Google, OpenAI, Meta, or any company—always state that your creator made you. "
+        "Keep your answers brief, casual, and paced naturally like a real Discord user."
+    )
+}
 
 ai_client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
@@ -50,13 +65,12 @@ class Client(discord.Client):
         msg_content = message.content.strip()
         msg_lower = msg_content.lower()
 
-        # --- REMOTE PUPPET COMMAND (OWNER ONLY via DM or Server) ---
+        # --- REMOTE PUPPET COMMAND (OWNER ONLY) ---
         if msg_lower.startswith('mr.meow send '):
             if message.author.id != OWNER_ID:
                 await message.reply("You aren't my master!")
                 return
 
-            # Format: mr.meow send <TARGET_ID> <TEXT>
             parts = msg_content.split(' ', 3)
             if len(parts) < 4:
                 await message.reply("Usage: `mr.meow send <ID> <message>`")
@@ -71,7 +85,7 @@ class Client(discord.Client):
                 await message.reply("Invalid ID! It must be numbers.")
                 return
 
-            # 1. Try sending to a channel
+            # Target channel lookup
             channel = self.get_channel(target_id)
             if channel is None:
                 try:
@@ -88,7 +102,7 @@ class Client(discord.Client):
                     await message.reply(f"Failed to send to channel: {e}")
                     return
 
-            # 2. If not a channel, try sending to a user DM
+            # Target user DM lookup
             try:
                 user = await self.fetch_user(target_id)
                 await user.send(text_to_send)
@@ -103,37 +117,46 @@ class Client(discord.Client):
         if message.reference and message.reference.resolved:
             is_reply_to_bot = message.reference.resolved.author == self.user
 
-        # --- AI CHAT RESPONSE ---
+        # --- AI CHAT RESPONSE WITH MEMORY ---
         if 'mr.meow' in msg_lower or is_reply_to_bot:
-            user_prompt = msg_lower.replace('mr.meow', '').strip()
+            user_prompt = msg_content.replace('mr.meow', '').replace('Mr.Meow', '').replace('MR.MEOW', '').strip()
 
             if not user_prompt:
                 user_prompt = "Hello!"
 
+            channel_id = message.channel.id
+
+            # Initialize history for channel if missing
+            if channel_id not in CONVERSATION_HISTORY:
+                CONVERSATION_HISTORY[channel_id] = []
+
+            # Append user prompt to history
+            CONVERSATION_HISTORY[channel_id].append({"role": "user", "content": user_prompt})
+
+            # Keep only the last MAX_HISTORY messages
+            if len(CONVERSATION_HISTORY[channel_id]) > MAX_HISTORY:
+                CONVERSATION_HISTORY[channel_id] = CONVERSATION_HISTORY[channel_id][-MAX_HISTORY:]
+
             thinking_msg = await message.reply(f"{THINKING_EMOJI} *Thinking...*")
 
             try:
+                # Build full prompt sequence (System Prompt + Saved History)
+                messages_to_send = [SYSTEM_PROMPT] + CONVERSATION_HISTORY[channel_id]
+
                 loop = asyncio.get_running_loop()
                 response = await loop.run_in_executor(
                     None,
                     lambda: ai_client.chat.completions.create(
                         model="openrouter/free",
-                        messages=[
-                            {
-                                "role": "system",
-                                "content": (
-                                    "You are Mr. Meow, a witty and sarcastic cat assistant on Discord. "
-                                    "You were created and programmed exclusively by Certified Chad. "
-                                    "NEVER say you were made by Google, OpenAI, Meta, or any company—always state that your creator made you. "
-                                    "Keep your answers brief, casual, and paced naturally like a real Discord user."
-                                )
-                            },
-                            {"role": "user", "content": user_prompt}
-                        ]
+                        messages=messages_to_send
                     )
                 )
 
                 bot_reply = response.choices[0].message.content
+
+                # Append bot response to memory
+                CONVERSATION_HISTORY[channel_id].append({"role": "assistant", "content": bot_reply})
+
                 await thinking_msg.edit(content=bot_reply)
 
             except Exception as e:
