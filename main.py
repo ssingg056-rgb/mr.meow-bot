@@ -147,7 +147,7 @@ class Client(discord.Client):
                 response = await loop.run_in_executor(
                     None,
                     lambda: ai_client.chat.completions.create(
-                        model="openrouter/free",
+                        model="deepseek/deepseek-r1:free",
                         messages=messages_to_send
                     )
                 )
