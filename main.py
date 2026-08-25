@@ -32,7 +32,7 @@ OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
 # Replace with your actual numerical Discord User ID!
 OWNER_ID = 123456789012345678  
 
-THINKING_EMOJI = "<a:loading:1529087869124350024>"
+THINKING_EMOJI = "<a:loading:1521196096465010719>"
 
 # Dictionary to store conversation history per channel
 CONVERSATION_HISTORY = {}
