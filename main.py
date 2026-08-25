@@ -30,14 +30,13 @@ DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
 OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
 
 # Replace with your actual numerical Discord User ID!
-OWNER_ID = 1521196096465010719 
+OWNER_ID = 123456789012345678  
 
 THINKING_EMOJI = "<a:loading:1529087869124350024>"
 
 # Dictionary to store conversation history per channel
-# Structure: { channel_id: [ {"role": "...", "content": "..."}, ... ] }
 CONVERSATION_HISTORY = {}
-MAX_HISTORY = 10  # Remembers the last 10 messages per chat
+MAX_HISTORY = 10 
 
 SYSTEM_PROMPT = {
     "role": "system",
@@ -49,9 +48,14 @@ SYSTEM_PROMPT = {
     )
 }
 
+# Initialize OpenRouter client with required headers
 ai_client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=OPENROUTER_API_KEY,
+    default_headers={
+        "HTTP-Referer": "https://render.com",
+        "X-Title": "Mr Meow Bot",
+    }
 )
 
 class Client(discord.Client):
@@ -126,42 +130,36 @@ class Client(discord.Client):
 
             channel_id = message.channel.id
 
-            # Initialize history for channel if missing
             if channel_id not in CONVERSATION_HISTORY:
                 CONVERSATION_HISTORY[channel_id] = []
 
-            # Append user prompt to history
             CONVERSATION_HISTORY[channel_id].append({"role": "user", "content": user_prompt})
 
-            # Keep only the last MAX_HISTORY messages
             if len(CONVERSATION_HISTORY[channel_id]) > MAX_HISTORY:
                 CONVERSATION_HISTORY[channel_id] = CONVERSATION_HISTORY[channel_id][-MAX_HISTORY:]
 
             thinking_msg = await message.reply(f"{THINKING_EMOJI} *Thinking...*")
 
             try:
-                # Build full prompt sequence (System Prompt + Saved History)
                 messages_to_send = [SYSTEM_PROMPT] + CONVERSATION_HISTORY[channel_id]
 
                 loop = asyncio.get_running_loop()
                 response = await loop.run_in_executor(
                     None,
                     lambda: ai_client.chat.completions.create(
-                        model="deepseek/deepseek-r1:free",
+                        model="openrouter/auto",
                         messages=messages_to_send
                     )
                 )
 
                 bot_reply = response.choices[0].message.content
-
-                # Append bot response to memory
                 CONVERSATION_HISTORY[channel_id].append({"role": "assistant", "content": bot_reply})
 
                 await thinking_msg.edit(content=bot_reply)
 
             except Exception as e:
-                print(f"Error handling message: {e}")
-                await thinking_msg.edit(content="Meow! Something went wrong processing that request.")
+                print(f"CRITICAL API ERROR: {type(e).__name__} - {e}")
+                await thinking_msg.edit(content=f"Meow! API Error: `{e}`")
 
 intents = discord.Intents.default()
 intents.message_content = True
