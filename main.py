@@ -30,9 +30,9 @@ DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
 OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
 
 # Replace with your actual numerical Discord User ID!
-OWNER_ID = 123456789012345678  
+OWNER_ID = 1521196096465010719  
 
-THINKING_EMOJI = "<a:loading:1521196096465010719>"
+THINKING_EMOJI = "<a:loading:1529087869124350024>"
 
 # Dictionary to store conversation history per channel
 CONVERSATION_HISTORY = {}
@@ -148,18 +148,26 @@ class Client(discord.Client):
                     None,
                     lambda: ai_client.chat.completions.create(
                         model="openrouter/auto",
-                        messages=messages_to_send
+                        messages=messages_to_send,
+                        max_tokens=300  # Prevents 402 token limit errors
                     )
                 )
 
                 bot_reply = response.choices[0].message.content
                 CONVERSATION_HISTORY[channel_id].append({"role": "assistant", "content": bot_reply})
 
+                # Safely truncate response if it exceeds Discord's 2000 character limit
+                if len(bot_reply) > 2000:
+                    bot_reply = bot_reply[:1990] + "..."
+
                 await thinking_msg.edit(content=bot_reply)
 
             except Exception as e:
                 print(f"CRITICAL API ERROR: {type(e).__name__} - {e}")
-                await thinking_msg.edit(content=f"Meow! API Error: `{e}`")
+                
+                # Truncate error string so Discord doesn't reject it
+                error_str = str(e)[:1500]
+                await thinking_msg.edit(content=f"Meow! API Error: ```{error_str}```")
 
 intents = discord.Intents.default()
 intents.message_content = True
