@@ -1,11 +1,11 @@
 import discord
 from discord.ext import commands
 
-# Add as many server IDs as you want inside this list!
+# Keep this EMPTY [] if you want ?help to work in ALL servers!
+# Or list specific IDs: [1413541161024360511, 1533591364724326551]
 ALLOWED_GUILD_IDS = [
-    1413541161024360511,  # First Server ID
-    1533591364724326551,  # Second Server ID
-    112233445566778899   # Third Server ID
+    1413541161024360511,
+    1533591364724326551
 ]
 
 class HelpCog(commands.Cog):
@@ -14,8 +14,8 @@ class HelpCog(commands.Cog):
 
     @commands.command(name="help")
     async def help_command(self, ctx):
-        # Ignore if command is sent in DMs or servers NOT in your list
-        if ctx.guild is None or ctx.guild.id not in ALLOWED_GUILD_IDS:
+        # Allow everywhere if ALLOWED_GUILD_IDS is empty, otherwise restrict to list
+        if ALLOWED_GUILD_IDS and (ctx.guild is None or ctx.guild.id not in ALLOWED_GUILD_IDS):
             return  
 
         embed = discord.Embed(
