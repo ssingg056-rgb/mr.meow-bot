@@ -31,12 +31,12 @@ DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
 OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
 
 # Replace with your actual numerical Discord User ID!
-OWNER_ID = 123456789012345678  
+OWNER_ID = 1521196096465010719  
 
 # Add all allowed Server (Guild) IDs here!
 ALLOWED_GUILD_IDS = [
-    123456789012345678,  # Server 1
-    987654321098765432,  # Server 2
+    1413541161024360511,  # First Server ID
+    1533591364724326551,  # Second Server ID
 ]
 
 THINKING_EMOJI = "<a:loading:1529087869124350024>"
@@ -170,7 +170,7 @@ async def on_message(message):
             response = await loop.run_in_executor(
                 None,
                 lambda: ai_client.chat.completions.create(
-                    model="openrouter/auto",
+                    model="openrouter/free",
                     messages=messages_to_send,
                     max_tokens=300
                 )
