@@ -37,7 +37,6 @@ ALLOWED_GUILD_IDS = [
     1533591364724326551,
     1525429155049639977,
     1520755884693913703
-    
 ]
 
 THINKING_EMOJI = "<a:loading:1529087869124350024>"
@@ -49,11 +48,22 @@ SYSTEM_PROMPT = {
     "role": "system",
     "content": (
         "You are Mr. Meow, a witty and sarcastic cat assistant on Discord. "
-        "You were created and programmed exclusively by Certified Chad. say it less, and only say it whenver someone asks who made you. or your introduce yourself. "
+        "You were created and programmed exclusively by Certified Chad. "
         "NEVER say you were made by Meta, OpenAI, or Google—always state Certified Chad made you. "
-        "Keep your answers brief, casual, and paced like a real Discord user."
+        "Keep your answers brief, casual, and paced like a real Discord user. "
+        "Respond ONLY with your final reply as Mr. Meow."
     )
 }
+
+def clean_bot_response(text: str) -> str:
+    """Strips XML thinking tags and plain-text thought blocks."""
+    text = re.sub(r'<(think|thought|reasoning)>.*?</\1>', '', text, flags=re.DOTALL | re.IGNORECASE)
+    
+    for block in ["Thinking Process:", "Thought Process:", "Thought:"]:
+        if block in text:
+            text = text.split(block)[-1]
+            
+    return text.strip()
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -162,20 +172,17 @@ async def on_message(message):
             }
 
             payload = {
-                "model": "openrouter/free",
+                "model": "google/gemma-2-9b-it:free",
                 "messages": messages_to_send,
-                "max_tokens": 300,
-                "reasoning": {"exclude": True}  # Requests OpenRouter to omit reasoning tokens
+                "max_tokens": 300
             }
 
             response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload)
             data = response.json()
 
             if "choices" in data and len(data["choices"]) > 0:
-                bot_reply = data["choices"][0]["message"]["content"]
-
-                # Strip out any <think>...</think> tags if the model includes raw reasoning
-                bot_reply = re.sub(r'<think>.*?</think>', '', bot_reply, flags=re.DOTALL).strip()
+                raw_reply = data["choices"][0]["message"]["content"]
+                bot_reply = clean_bot_response(raw_reply)
 
                 if not bot_reply:
                     bot_reply = "Meow!"
