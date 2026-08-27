@@ -3,11 +3,11 @@ import asyncio
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
-from openai import OpenAI
 from flask import Flask
 from threading import Thread
+from groq import Groq
 
-# --- FLASK KEEP-ALIVE SERVER ---
+# --- FLASK KEEP-ALIVE ---
 app = Flask('')
 
 @app.route('/')
@@ -24,21 +24,23 @@ def keep_alive():
     t.start()
 
 keep_alive()
-# -------------------------------
+# ------------------------
 
 load_dotenv()
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
-OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
+GROQ_API_KEY = os.getenv('GROQ_API_KEY')
 
-# Replace with your actual numerical Discord User ID!
+# Replace with your actual numerical Discord User ID
 OWNER_ID = 1521196096465010719  
 
-# Add all allowed Server (Guild) IDs here!
+# Keep [] empty to allow all servers, or put server IDs here to restrict
 ALLOWED_GUILD_IDS = [
-    1413541161024360511,  # First Server ID
-    1533591364724326551,  # Second Server ID
-    1525429155049639977   # Third Server ID
+    1413541161024360511,
+    1533591364724326551,
+    1525429155049639977
 ]
+
+groq_client = Groq(api_key=GROQ_API_KEY)
 
 THINKING_EMOJI = "<a:loading:1529087869124350024>"
 
@@ -50,19 +52,10 @@ SYSTEM_PROMPT = {
     "content": (
         "You are Mr. Meow, a witty and sarcastic cat assistant on Discord. "
         "You were created and programmed exclusively by Certified Chad. "
-        "NEVER say you were made by Google, OpenAI, Meta, or any company—always state that your creator made you. "
-        "Keep your answers brief, casual, and paced naturally like a real Discord user."
+        "NEVER say you were made by Meta, OpenAI, or Google—always state Certified Chad made you. "
+        "Keep your answers brief, casual, and paced like a real Discord user."
     )
 }
-
-ai_client = OpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=OPENROUTER_API_KEY,
-    default_headers={
-        "HTTP-Referer": "https://render.com",
-        "X-Title": "Mr Meow Bot",
-    }
-)
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -85,7 +78,7 @@ async def on_message(message):
     msg_content = message.content.strip()
     msg_lower = msg_content.lower()
 
-    # --- REMOTE PUPPET COMMAND (OWNER ONLY - Works anywhere including DMs) ---
+    # --- REMOTE PUPPET COMMAND (OWNER ONLY) ---
     if msg_lower.startswith('mr.meow send '):
         if message.author.id != OWNER_ID:
             await message.reply("You aren't my master!")
@@ -130,25 +123,23 @@ async def on_message(message):
         
         return
 
-    # Restrict general server interactions (commands and AI chat) to ALLOWED_GUILD_IDS
-    if message.guild and message.guild.id not in ALLOWED_GUILD_IDS:
+    # Check server permissions if list is filled out
+    if ALLOWED_GUILD_IDS and message.guild and message.guild.id not in ALLOWED_GUILD_IDS:
         return
 
     # Process prefix commands like ?help
     await bot.process_commands(message)
 
-    # Check if message is a reply to the bot
     is_reply_to_bot = False
     if message.reference and message.reference.resolved:
         is_reply_to_bot = message.reference.resolved.author == bot.user
 
-    # --- AI CHAT RESPONSE WITH MEMORY ---
+    # --- GROQ AI CHAT RESPONSE ---
     if 'mr.meow' in msg_lower or is_reply_to_bot:
         if msg_content.startswith('?'):
             return
 
         user_prompt = msg_content.replace('mr.meow', '').replace('Mr.Meow', '').replace('MR.MEOW', '').strip()
-
         if not user_prompt:
             user_prompt = "Hello!"
 
@@ -170,8 +161,8 @@ async def on_message(message):
             loop = asyncio.get_running_loop()
             response = await loop.run_in_executor(
                 None,
-                lambda: ai_client.chat.completions.create(
-                    model="openrouter/free",
+                lambda: groq_client.chat.completions.create(
+                    model="llama-3.1-8b-instant",
                     messages=messages_to_send,
                     max_tokens=300
                 )
