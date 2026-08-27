@@ -162,7 +162,7 @@ async def on_message(message):
             response = await loop.run_in_executor(
                 None,
                 lambda: groq_client.chat.completions.create(
-                    model="llama-3.1-8b-instant",
+                    model="llama-3.3-70b-versatile",
                     messages=messages_to_send,
                     max_tokens=300
                 )
