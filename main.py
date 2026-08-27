@@ -1,4 +1,5 @@
 import os
+import re
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -29,14 +30,14 @@ load_dotenv()
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
 OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
 
-# Your numerical Discord User ID
 OWNER_ID = 1521196096465010719  
 
-# Keep [] empty to allow all servers, or put server IDs here to restrict
 ALLOWED_GUILD_IDS = [
     1413541161024360511,
     1533591364724326551,
-    1525429155049639977
+    1525429155049639977,
+    1520755884693913703
+    
 ]
 
 THINKING_EMOJI = "<a:loading:1529087869124350024>"
@@ -163,7 +164,8 @@ async def on_message(message):
             payload = {
                 "model": "openrouter/free",
                 "messages": messages_to_send,
-                "max_tokens": 300
+                "max_tokens": 300,
+                "reasoning": {"exclude": True}  # Requests OpenRouter to omit reasoning tokens
             }
 
             response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload)
@@ -171,6 +173,13 @@ async def on_message(message):
 
             if "choices" in data and len(data["choices"]) > 0:
                 bot_reply = data["choices"][0]["message"]["content"]
+
+                # Strip out any <think>...</think> tags if the model includes raw reasoning
+                bot_reply = re.sub(r'<think>.*?</think>', '', bot_reply, flags=re.DOTALL).strip()
+
+                if not bot_reply:
+                    bot_reply = "Meow!"
+
                 CONVERSATION_HISTORY[channel_id].append({"role": "assistant", "content": bot_reply})
 
                 if len(bot_reply) > 2000:

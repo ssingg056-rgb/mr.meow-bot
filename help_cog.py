@@ -6,7 +6,8 @@ from discord.ext import commands
 ALLOWED_GUILD_IDS = [
     1413541161024360511,
     1533591364724326551,
-    1525429155049639977
+    1525429155049639977,
+    1520755884693913703
 ]
 
 class HelpCog(commands.Cog):
