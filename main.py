@@ -1,11 +1,10 @@
 import os
-import asyncio
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 from flask import Flask
 from threading import Thread
-from groq import Groq
+import requests
 
 # --- FLASK KEEP-ALIVE ---
 app = Flask('')
@@ -28,24 +27,16 @@ keep_alive()
 
 load_dotenv()
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
-GROQ_API_KEY = os.getenv('GROQ_API_KEY')
+OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
 
-# --- DIAGNOSTIC KEY CHECK ---
-if not GROQ_API_KEY:
-    print("❌ ERROR: GROQ_API_KEY is missing from environment variables!")
-else:
-    print(f"✅ GROQ_API_KEY loaded: {GROQ_API_KEY[:6]}... (Length: {len(GROQ_API_KEY)})")
-
+# Your numerical Discord User ID
 OWNER_ID = 1521196096465010719  
 
 # Keep [] empty to allow all servers, or put server IDs here to restrict
 ALLOWED_GUILD_IDS = [
     1413541161024360511,
-    1533591364724326551,
-    1525429155049639977
+    1533591364724326551
 ]
-
-groq_client = Groq(api_key=GROQ_API_KEY)
 
 THINKING_EMOJI = "<a:loading:1529087869124350024>"
 
@@ -139,7 +130,7 @@ async def on_message(message):
     if message.reference and message.reference.resolved:
         is_reply_to_bot = message.reference.resolved.author == bot.user
 
-    # --- GROQ AI CHAT RESPONSE ---
+    # --- OPENROUTER AI CHAT RESPONSE ---
     if 'mr.meow' in msg_lower or is_reply_to_bot:
         if msg_content.startswith('?'):
             return
@@ -163,27 +154,35 @@ async def on_message(message):
         try:
             messages_to_send = [SYSTEM_PROMPT] + CONVERSATION_HISTORY[channel_id]
 
-            loop = asyncio.get_running_loop()
-            response = await loop.run_in_executor(
-                None,
-                lambda: groq_client.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
-                    messages=messages_to_send,
-                    max_tokens=300
-                )
-            )
+            headers = {
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json",
+            }
 
-            bot_reply = response.choices[0].message.content
-            CONVERSATION_HISTORY[channel_id].append({"role": "assistant", "content": bot_reply})
+            payload = {
+                "model": "openrouter/free",
+                "messages": messages_to_send,
+                "max_tokens": 300
+            }
 
-            if len(bot_reply) > 2000:
-                bot_reply = bot_reply[:1990] + "..."
+            response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload)
+            data = response.json()
 
-            await thinking_msg.edit(content=bot_reply)
+            if "choices" in data and len(data["choices"]) > 0:
+                bot_reply = data["choices"][0]["message"]["content"]
+                CONVERSATION_HISTORY[channel_id].append({"role": "assistant", "content": bot_reply})
+
+                if len(bot_reply) > 2000:
+                    bot_reply = bot_reply[:1990] + "..."
+
+                await thinking_msg.edit(content=bot_reply)
+            else:
+                error_msg = data.get("error", {}).get("message", "Unknown OpenRouter Error")
+                await thinking_msg.edit(content=f"Meow! API Error: ```{error_msg}```")
 
         except Exception as e:
             print(f"CRITICAL API ERROR: {type(e).__name__} - {e}")
             error_str = str(e)[:1500]
-            await thinking_msg.edit(content=f"Meow! API Error: ```{error_str}```")
+            await thinking_msg.edit(content=f"Meow! System Error: ```{error_str}```")
 
 bot.run(DISCORD_TOKEN)
