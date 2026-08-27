@@ -172,7 +172,7 @@ async def on_message(message):
             }
 
             payload = {
-                "model": "google/gemma-2-9b-it:free",
+                "model": "mistralai/mistral-7b-instruct:free",
                 "messages": messages_to_send,
                 "max_tokens": 300
             }
