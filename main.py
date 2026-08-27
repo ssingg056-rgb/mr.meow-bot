@@ -30,7 +30,12 @@ load_dotenv()
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
 GROQ_API_KEY = os.getenv('GROQ_API_KEY')
 
-# Replace with your actual numerical Discord User ID
+# --- DIAGNOSTIC KEY CHECK ---
+if not GROQ_API_KEY:
+    print("❌ ERROR: GROQ_API_KEY is missing from environment variables!")
+else:
+    print(f"✅ GROQ_API_KEY loaded: {GROQ_API_KEY[:6]}... (Length: {len(GROQ_API_KEY)})")
+
 OWNER_ID = 1521196096465010719  
 
 # Keep [] empty to allow all servers, or put server IDs here to restrict
