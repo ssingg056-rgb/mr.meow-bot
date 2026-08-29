@@ -48,6 +48,7 @@ class HelpCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+<<<<<<< HEAD
     def _build_embed(self, category: str) -> discord.Embed:
         embed = discord.Embed(
             title="🐱 Mr. Meow Help Center",
@@ -85,6 +86,25 @@ class HelpCog(commands.Cog):
         embed = self._build_embed("ai")
         await ctx.send(embed=embed, view=HelpView(self))
 
+=======
+    @commands.command(name="help")
+    async def help_command(self, ctx):
+        # Allow everywhere if ALLOWED_GUILD_IDS is empty, otherwise restrict to list
+        if ALLOWED_GUILD_IDS and (ctx.guild is None or ctx.guild.id not in ALLOWED_GUILD_IDS):
+            return  
+
+        embed = discord.Embed(
+            title="🐱 Mr. Meow Help Center",
+            description="Commands available in authorized servers:",
+            color=discord.Color.blue()
+        )
+        embed.add_field(name="`?help`", value="Shows this help menu.", inline=False)
+        embed.add_field(name="`mr.meow <text>` or reply", value="Talk to Mr. Meow AI.", inline=False)
+        embed.add_field(name="`mr.meow send <ID> <text>`", value="Owner-only remote messaging.", inline=False)
+        embed.set_footer(text="Programmed exclusively by Certified Chad")
+
+        await ctx.send(embed=embed)
+>>>>>>> 8284d5f15f06123367775330573e56590c0efdec
 
 async def setup(bot):
     await bot.add_cog(HelpCog(bot))

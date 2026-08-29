@@ -1,7 +1,10 @@
 discord.py
+<<<<<<< HEAD
 aiohttp
 motor
 pymongo
+=======
+>>>>>>> 8284d5f15f06123367775330573e56590c0efdec
 openai
 python-dotenv
 flask
