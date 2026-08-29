@@ -61,7 +61,7 @@ class HelpCog(commands.Cog):
             embed.add_field(name="`?help`", value="Shows this help menu.", inline=False)
 
         elif category == "economy":
-            embed.description = "**Economy commands:**"
+            embed.description = "**Economy commands:**" 
             embed.add_field(name="`?balance`", value="Check your current coin balance.", inline=False)
             embed.add_field(name="`?daily`", value="Claim your daily coins (24h cooldown).", inline=False)
             embed.add_field(name="`?weekly`", value="Claim your weekly coins (7d cooldown).", inline=False)
